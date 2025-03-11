@@ -2,32 +2,32 @@ package main
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/gocolly/colly"
+	"github.com/go-rod/rod"
+
+	"github.com/go-rod/rod/lib/input"
+	"github.com/go-rod/rod/lib/launcher"
 )
 
 func main() {
 
-	c := colly.NewCollector(
-		colly.AllowedDomains("news.ycombinator.com"),
-	)
+	fmt.Println("Starting...")
+	browser := rod.New().ControlURL(launcher.New().Headless(true).MustLaunch()).MustConnect()
+	defer browser.MustClose()
 
-	c.OnHTML("tr", func(e *colly.HTMLElement) {
-		fmt.Println("Title:", e.Text)
-	})
+	fmt.Println("connected to browser, opening page...")
+	page := browser.MustPage("https://camelcamelcamel.com/").MustWaitStable()
 
-	c.OnError(func(r *colly.Response, err error) {
-		log.Println("Request URL:", r.Request.URL, "failed with response:", r.StatusCode, "Error:", err)
-	})
+	searchTerm := "iphone"
+	page.MustElement("#sq").MustInput(searchTerm).MustType(input.Enter)
 
-	c.OnRequest(func(r *colly.Request) {
-		log.Println("Visiting ==============================", r.URL)
-	})
+	page.MustWaitLoad()
 
-	err := c.Visit("https://news.ycombinator.com/")
+	html, err := page.HTML()
 	if err != nil {
-		log.Fatal("Failed to visit website:", err)
+		fmt.Println(err)
+		return
 	}
 
+	fmt.Println("Page content:\n", html)
 }
